@@ -6,6 +6,8 @@ import(
 	"io/ioutil"
 	"os"
 	"strings"
+	"github.com/raymondbutcher/tidyhtml"
+	"bytes"
 )
 
 var (
@@ -29,12 +31,15 @@ func main() {
 
 	template := readFile(templateFilepath)
 
-
-
 	for k, v := range pages {
 		filepath := filepath.Join(workingDirectory, k + ".html")
 		contents := strings.Replace(template, "$(body)", v, 1)
-		writeFile(filepath, contents)
+
+		var parsedContents bytes.Buffer
+
+		tidyhtml.Copy(&parsedContents, strings.NewReader(contents))
+
+		writeFile(filepath, parsedContents)
 	}
 }
 
@@ -47,8 +52,8 @@ func readFile(filepath string) (string){
 	return string(contents)
 }
 
-func writeFile(filepath, contents string) {
-	err := ioutil.WriteFile(filepath, []byte(contents), 0666)
+func writeFile(filepath string, contents bytes.Buffer) {
+	err := ioutil.WriteFile(filepath, contents.Bytes(), 0666)
 	if err != nil {
 		log.Fatal("Cannot write ", filepath)
 	}
